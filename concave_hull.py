@@ -27,10 +27,11 @@ class ConcaveHull(object):
             else:
                 base_points = [self.points[self.vertices[-1]], self.points[self.vertices[-2]]]
 
-            next_point, index = self.findNextPoint(idxs, base_points)
-            if self.checkIntersections(next_point) and i > 3:
-                idxs = np.delete(idxs, np.where(idxs == index))
-            self.addPointToVertices(next_point)
+            next_points, indexes = self.findNextPoint(idxs, base_points)
+            if self.checkIntersections(next_points[0]) and i > 3:
+                self.addPointToVertices(next_points[1])
+            else:
+                self.addPointToVertices(next_points[0])
             i += 1
         return
 
@@ -45,18 +46,13 @@ class ConcaveHull(object):
 
     def findNextPoint(self, indexes, base_points):
         base_vector = self.getVectorFromTwoPoint(base_points[0], base_points[1])
-        min_angle_point = None
-        index = 0
-        min_angle = 4.0
-        for idx in indexes:
-            point = self.temp_list[idx]
+        angles = np.array([])
+        points = self.temp_list[indexes]
+        for point in points:
             vector = self.getVectorFromTwoPoint(base_points[0], point)
-            angle = np.arctan2(np.cross(base_vector, vector), np.dot(base_vector, vector))
-            if angle < min_angle:
-                min_angle_point = point
-                min_angle = angle
-                index = idx
-        return min_angle_point, index
+            angles = np.append(angles, np.arctan2(np.cross(base_vector, vector), np.dot(base_vector, vector)))
+        idxs = np.argsort(angles)
+        return points[idxs], indexes[idxs]
 
     def findIndexOfPoint(self, point):
         return np.where(np.logical_and(self.points[:, 0] == point[0],
