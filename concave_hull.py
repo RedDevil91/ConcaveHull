@@ -13,7 +13,7 @@ class ConcaveHull(object):
 
         self.start_point = self.findStartPoint()
         self.addPointToVertices(self.start_point)
-        self.computeVertices()
+        # self.computeVertices()
         return
 
     def computeVertices(self):
@@ -28,10 +28,11 @@ class ConcaveHull(object):
                 base_points = [self.points[self.vertices[-1]], self.points[self.vertices[-2]]]
 
             next_points, indexes = self.findNextPoint(idxs, base_points)
-            if self.checkIntersections(next_points[0]) and i > 3:
-                self.addPointToVertices(next_points[1])
-            else:
-                self.addPointToVertices(next_points[0])
+            # if self.checkIntersections(next_points[0]) and i > 2:
+            #     self.addPointToVertices(next_points[1])
+            # else:
+            #     self.addPointToVertices(next_points[0])
+            self.addPointToVertices(next_points[0])
             i += 1
         return
 
@@ -50,7 +51,9 @@ class ConcaveHull(object):
         points = self.temp_list[indexes]
         for point in points:
             vector = self.getVectorFromTwoPoint(base_points[0], point)
-            angles = np.append(angles, np.arctan2(np.cross(base_vector, vector), np.dot(base_vector, vector)))
+            angle = np.arctan2(np.cross(base_vector, vector), np.dot(base_vector, vector))
+            angle = angle if angle < 0 else (-np.pi - (np.pi - angle))
+            angles = np.append(angles, angle)
         idxs = np.argsort(angles)
         return points[idxs], indexes[idxs]
 
@@ -99,10 +102,29 @@ class ConcaveHull(object):
 
 
 if __name__ == '__main__':
-    points = np.random.random_sample((10, 2))
+    # points = np.random.random_sample((10, 2))
+    points = np.array([
+        [7, 1],
+        [4, 2],
+        [9, 2],
+        [6, 3],
+        [3, 4],
+        [2, 5],
+        [4, 5],
+        [7, 5],
+        [5, 7],
+        [2, 8],
+        [4, 8],
+        [7, 9],
+        [3, 10],
+        [5, 10],
+        [6, 11],
+        [4, 12],
+    ])
+
     plt.plot(points[:, 0], points[:, 1], 'o', ms=10, color='blue')
 
-    hull = ConcaveHull(points, k=3)
+    hull = ConcaveHull(points, k=5)
     plt.plot(hull.start_point[0], hull.start_point[1], 'o', ms=10, color='red')
 
     # dist, idxs = hull.findKNearestNeighbour(hull.start_point)
@@ -113,16 +135,26 @@ if __name__ == '__main__':
     # ax.add_patch(Circle(hull.start_point, radius=np.max(dist), fill=False))
     #
     # temp_point = np.array([(hull.start_point[0] - 1), hull.start_point[1]])
-    # next_point = hull.findNextPoint(idxs, [hull.start_point, temp_point])
-    # plt.plot(next_point[0], next_point[1], 'o', ms=10, color='yellow')
+    # next_point, indexes = hull.findNextPoint(idxs, [hull.start_point, temp_point])
+    # plt.plot(next_point[0][0], next_point[0][1], 'o', ms=10, color='yellow')
     #
-    # hull.addPointToVertices(next_point)
+    # hull.addPointToVertices(next_point[0])
     #
-    # dist, idxs = hull.findKNearestNeighbour(next_point)
+    # dist, idxs = hull.findKNearestNeighbour(next_point[0])
     # plt.plot(hull.temp_list[idxs, 0], hull.temp_list[idxs, 1], 'o', ms=10, color='green')
     #
-    # next_point2 = hull.findNextPoint(idxs, [next_point, hull.start_point])
-    # plt.plot(next_point2[0], next_point2[1], 'o', ms=10, color='yellow')
+    # next_point2, indexes = hull.findNextPoint(idxs, [next_point[0], hull.start_point])
+    # plt.plot(next_point2[0][0], next_point2[0][1], 'o', ms=10, color='yellow')
+    #
+    # hull.addPointToVertices(next_point2[0])
+    #
+    # dist, idxs = hull.findKNearestNeighbour(next_point2[0])
+    # plt.plot(hull.temp_list[idxs, 0], hull.temp_list[idxs, 1], 'o', ms=10, color='green')
+    #
+    # next_point3, indexes = hull.findNextPoint(idxs, [next_point2[0], next_point[0]])
+    # plt.plot(next_point3[0][0], next_point3[0][1], 'o', ms=10, color='yellow')
+    #
+    # hull.addPointToVertices(next_point3[0])
 
     plt.plot(points[hull.vertices, 0], points[hull.vertices, 1], '-')
     plt.show()
