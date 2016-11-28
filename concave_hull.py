@@ -17,34 +17,27 @@ class ConcaveHull(object):
         return
 
     def computeVertices(self):
+        i = 0
         while True:
+            if i > 20:
+                break
             dists, idxs = self.findKNearestNeighbour(self.points[self.vertices[-1]])
-            if len(self.vertices) == 1:
-                base_points = [self.start_point, np.array([self.start_point[0] - 1, self.start_point[1]])]
-            else:
-                base_points = [self.points[self.vertices[-1]], self.points[self.vertices[-2]]]
 
-            next_points, indexes = self.findNextPoint(idxs, base_points)
+            next_points, indexes = self.findNextPoint(idxs, self.getBasePoints())
 
-            if (next_points[0][0] == self.start_point[0] and
-                        next_points[0][1] == self.start_point[1]):
+            next_point = self.findIntersections(next_points)
+
+            if (next_point[0] == self.start_point[0] and
+                    next_point[1] == self.start_point[1]):
                 self.addPointToVertices(self.start_point)
                 break
 
-            if len(self.vertices) > 2 and self.findIntersections(next_points[0]):
-                # self.addPointToVertices(next_points[1])
-                next_point = next_points[1]
-                print self.findIntersections(next_point), next_point
-            else:
-                next_point = next_points[0]
-                # self.addPointToVertices(next_points[0])
             self.addPointToVertices(next_point)
+
             if len(self.vertices) == 4:
                 self.temp_list = np.append(self.temp_list, [self.start_point], 0)
-                # print self.temp_list
-            # print
-            # print next_point
-            # print
+
+            i += 1
         return
 
     def findStartPoint(self):
@@ -80,17 +73,31 @@ class ConcaveHull(object):
         self.vertices.append(idx)
         return
 
-    def findIntersections(self, point):
-        curr_segment = [self.points[self.vertices[-1]], point]
-        for i in range(len(self.vertices) - 2):
-            segment = [self.points[self.vertices[i]], self.points[self.vertices[i + 1]]]
-            if self.checkSegmentIntersections(curr_segment, segment):
-                return True
-        return False
+    def findIntersections(self, point_list):
+        if len(self.vertices) < 3:
+            return point_list[0]
+        for point in point_list:
+            curr_segment = [self.points[self.vertices[-1]], point]
+            intersects = False
+            for i in xrange(len(self.vertices) - 1):
+                segment = [self.points[self.vertices[i]], self.points[self.vertices[i + 1]]]
+                if (self.checkSegmentIntersections(curr_segment, segment) and
+                        not self.checkSamePointsInLines(curr_segment, segment)):
+                    intersects = True
+                    break
+            if not intersects:
+                return point
+
+    def getBasePoints(self):
+        if len(self.vertices) == 1:
+            base_points = [self.start_point, np.array([self.start_point[0] - 1, self.start_point[1]])]
+        else:
+            base_points = [self.points[self.vertices[-1]], self.points[self.vertices[-2]]]
+        return base_points
 
     @staticmethod
-    def getVectorFromTwoPoint(startPoint, endPoint):
-        return np.array([(endPoint[0] - startPoint[0]), (endPoint[1] - startPoint[1])])
+    def getVectorFromTwoPoint(start_point, end_point):
+        return np.array([(end_point[0] - start_point[0]), (end_point[1] - start_point[1])])
 
     @staticmethod
     def excludePointFromList(point, point_list):
@@ -112,8 +119,17 @@ class ConcaveHull(object):
             return True
         return False
 
+    @staticmethod
+    def checkSamePointsInLines(line1, line2):
+        return (line1[0][0] == line2[0][0] or line1[0][0] == line2[1][0] or
+                line1[1][0] == line2[0][0] or line1[1][0] == line2[1][0] or
+                line1[0][1] == line2[0][1] or line1[0][1] == line2[1][1] or
+                line1[1][1] == line2[0][1] or line1[1][1] == line2[1][1])
 
 if __name__ == '__main__':
+    # np.random.seed(3)
+    # np.random.seed(2)
+    np.random.seed(4)
     points = np.random.random_sample((30, 2))
     # points = np.array([
     #     [7, 1],
@@ -136,7 +152,7 @@ if __name__ == '__main__':
 
     plt.plot(points[:, 0], points[:, 1], 'o', ms=10, color='blue')
 
-    hull = ConcaveHull(points, k=5)
+    hull = ConcaveHull(points, k=6)
     plt.plot(hull.start_point[0], hull.start_point[1], 'o', ms=10, color='red')
 
     # dist, idxs = hull.findKNearestNeighbour(hull.start_point)
